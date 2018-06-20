@@ -4,6 +4,7 @@
 #define MOTORS_ELMO_DS402_READERTASK_TASK_HPP
 
 #include "motors_elmo_ds402/ReaderTaskBase.hpp"
+#include <motors_elmo_ds402/Controller.hpp>
 
 namespace motors_elmo_ds402{
 
@@ -38,7 +39,7 @@ namespace motors_elmo_ds402{
         /** TaskContext constructor for ReaderTask
          * \param name Name of the task. This name needs to be unique to make it identifiable for nameservices.
          * \param engine The RTT Execution engine to be used for this task, which serialises the execution of all commands, programs, state machines and incoming events for a task.
-         * 
+         *
          */
         ReaderTask(std::string const& name, RTT::ExecutionEngine* engine);
 
@@ -103,8 +104,18 @@ namespace motors_elmo_ds402{
          * before calling start() again.
          */
         void cleanupHook();
+
+    private:
+        Controller mController;
+        Update mUpdate;
+        base::samples::Joints mJoints;
+        uint64_t mExpectedJointState;
+
+        void writeSDOs(std::vector<canbus::Message> const& queries,
+            base::Time timeout = base::Time::fromSeconds(1));
+        void writeSDO(canbus::Message const& query,
+            base::Time timeout = base::Time::fromSeconds(1));
     };
 }
 
 #endif
-

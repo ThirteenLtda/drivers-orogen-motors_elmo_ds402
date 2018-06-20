@@ -31,4 +31,6 @@ task_context "ReaderTask" do
     output_port "can_out", "/canbus/Message"
 
     port_driven 'can_in'
+
+    exception_states 'TIMED_OUT'
 end

@@ -1,18 +1,13 @@
 <package>
   <description brief="oroGen integration of the Elmo DS402-based drivers">
-  
+
   </description>
   <author>Sylvain Joyeux/sylvain.joyeux@13robotics.com</author>
   <license></license>
   <url>http://</url>
   <logo>http://</logo>
   <depend package="base/cmake" />
-  <!--
-   To add any dependencies use the depend tag
-  <depend package="dummy-dependency-0" />
-	...
-  <depend package="dummy-dependency-n-1" />
-  <depend package="dummy-dependency-n" />
-  -->
   <depend package="drivers/motors_elmo_ds402" />
+  <depend package="drivers/orogen/canbus" />
+  <depend package="base/orogen/types" />
 </package>
