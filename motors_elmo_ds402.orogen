@@ -33,5 +33,5 @@ task_context "ReaderTask" do
 
     port_driven 'can_in'
 
-    exception_states 'TIMED_OUT'
+    exception_states 'SDO_TIMED_OUT'
 end

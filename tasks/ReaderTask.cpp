@@ -119,7 +119,7 @@ void ReaderTask::writeSDO(canbus::Message const& query, base::Time timeout)
             }
         }
         if (base::Time::now() > deadline) {
-            exception(TIMED_OUT);
+            exception(SDO_TIMED_OUT);
         }
         usleep(10);
     }
