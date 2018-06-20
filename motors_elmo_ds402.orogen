@@ -1,0 +1,34 @@
+name "motors_elmo_ds402"
+
+using_library "motors_elmo_ds402"
+
+import_types_from "canbus"
+import_types_from "base"
+import_types_from "motors_elmo_ds402Types.hpp"
+
+# Task that monitors a driver's status
+task_context "ReaderTask" do
+    needs_configuration
+
+    # The driver's CAN ID
+    property "can_id", "/int"
+
+    # How the fields are meant to be read
+    property "method", "/motors_elmo_ds402/TriggerConfiguration"
+
+    # The JointState fields required in the joint_state_samples items
+    #
+    # Not requesting all fields allows to optimize the traffic on the CAN bus
+    # (it's roughly 2 fields per CAN packet)
+    property "required_joint_states", "/motors_elmo_ds402/RequiredJointStates"
+
+    # The fields that are being read
+    output_port "joints_state_samples", "/base/samples/Joints"
+
+    # The incoming CAN packets
+    input_port "can_in", "/canbus/Message"
+    # The outgoing CAN packets
+    output_port "can_out", "/canbus/Message"
+
+    port_driven 'can_in'
+end
