@@ -9,5 +9,6 @@
   <depend package="base/cmake" />
   <depend package="drivers/motors_elmo_ds402" />
   <depend package="drivers/orogen/canbus" />
+  <depend package="drivers/orogen/canopen_master" />
   <depend package="base/orogen/types" />
 </package>

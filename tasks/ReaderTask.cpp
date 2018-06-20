@@ -47,8 +47,10 @@ bool ReaderTask::configureHook()
 
     _can_out.write(mController.queryNodeStateTransition(
         canopen_master::NODE_ENTER_PRE_OPERATIONAL));
-    writeSDOs(
-        mController.queryPeriodicJointStateUpdate(0, base::Time::fromMilliseconds(0)));
+    canopen_master::PDOCommunicationParameters parameters;
+    auto pdoSetup = mController.queryPeriodicJointStateUpdate(
+            0, _rpdo_configuration.get(), mExpectedJointState);
+    writeSDOs(pdoSetup);
     return true;
 }
 

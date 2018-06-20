@@ -5,6 +5,7 @@ using_library "motors_elmo_ds402"
 import_types_from "canbus"
 import_types_from "base"
 import_types_from "motors_elmo_ds402Types.hpp"
+import_types_from "canopen_master"
 
 # Task that monitors a driver's status
 task_context "ReaderTask" do
@@ -14,7 +15,7 @@ task_context "ReaderTask" do
     property "can_id", "/int"
 
     # How the fields are meant to be read
-    property "method", "/motors_elmo_ds402/TriggerConfiguration"
+    property "rpdo_configuration", "/canopen_master/PDOCommunicationParameters"
 
     # The JointState fields required in the joint_state_samples items
     #
