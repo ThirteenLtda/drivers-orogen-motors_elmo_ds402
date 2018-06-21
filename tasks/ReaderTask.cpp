@@ -50,7 +50,8 @@ bool ReaderTask::configureHook()
     canopen_master::PDOCommunicationParameters parameters;
     auto pdoSetup = mController.queryPeriodicJointStateUpdate(
             0, _rpdo_configuration.get(), mExpectedJointState);
-    writeSDOs(pdoSetup);
+    if (!writeSDOs(pdoSetup))
+        return false;
     return true;
 }
 
@@ -95,14 +96,16 @@ void ReaderTask::cleanupHook()
     ReaderTaskBase::cleanupHook();
 }
 
-void ReaderTask::writeSDOs(std::vector<canbus::Message> const& queries,
+bool ReaderTask::writeSDOs(std::vector<canbus::Message> const& queries,
     base::Time timeout)
 {
     for (auto const& query : queries) {
-        writeSDO(query, timeout);
+        if (!writeSDO(query, timeout))
+            return false;
     }
+    return true;
 }
-void ReaderTask::writeSDO(canbus::Message const& query, base::Time timeout)
+bool ReaderTask::writeSDO(canbus::Message const& query, base::Time timeout)
 {
     _can_out.write(query);
 
@@ -115,12 +118,15 @@ void ReaderTask::writeSDO(canbus::Message const& query, base::Time timeout)
         canbus::Message msg;
         if (_can_in.read(msg, false) == RTT::NewData) {
             if (mController.process(msg).isAcked(objectId, objectSubId)) {
-                return;
+                return true;
             }
         }
         if (base::Time::now() > deadline) {
             exception(SDO_TIMED_OUT);
+            return false;
         }
         usleep(10);
     }
+    // Never reached
+    return false;
 }

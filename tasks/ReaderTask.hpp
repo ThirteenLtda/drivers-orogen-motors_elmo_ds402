@@ -111,9 +111,9 @@ namespace motors_elmo_ds402{
         base::samples::Joints mJoints;
         uint64_t mExpectedJointState;
 
-        void writeSDOs(std::vector<canbus::Message> const& queries,
+        bool writeSDOs(std::vector<canbus::Message> const& queries,
             base::Time timeout = base::Time::fromSeconds(1));
-        void writeSDO(canbus::Message const& query,
+        bool writeSDO(canbus::Message const& query,
             base::Time timeout = base::Time::fromSeconds(1));
     };
 }
