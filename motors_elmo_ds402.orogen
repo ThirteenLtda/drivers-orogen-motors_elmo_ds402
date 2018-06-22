@@ -31,7 +31,8 @@ task_context "ReaderTask" do
     output_port "joints_state_samples", "/base/samples/Joints"
 
     # The incoming CAN packets
-    input_port "can_in", "/canbus/Message"
+    input_port("can_in", "/canbus/Message").
+        needs_reliable_connection
     # The outgoing CAN packets
     output_port "can_out", "/canbus/Message"
 
