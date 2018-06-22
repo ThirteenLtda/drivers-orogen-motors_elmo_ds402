@@ -50,7 +50,7 @@ bool ReaderTask::configureHook()
     canopen_master::PDOCommunicationParameters parameters;
     auto pdoSetup = mController.queryPeriodicJointStateUpdate(
             0, _rpdo_configuration.get(), mExpectedJointState);
-    if (!writeSDOs(pdoSetup))
+    if (!writeSDOs(pdoSetup, base::Time::fromSeconds(2)))
         return false;
     return true;
 }
