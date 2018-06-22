@@ -45,6 +45,11 @@ bool ReaderTask::configureHook()
     if (expected_joint_state.current_and_torque)
         mExpectedJointState |= UPDATE_JOINT_CURRENT;
 
+    auto queryFactors = mController.queryFactors();
+    if (!readSDOs(queryFactors, UPDATE_FACTORS, base::Time::fromSeconds(2)))
+        return false;
+    mController.setMotorParameters(_motor_parameters.get());
+
     _can_out.write(mController.queryNodeStateTransition(
         canopen_master::NODE_ENTER_PRE_OPERATIONAL));
     canopen_master::PDOCommunicationParameters parameters;
@@ -94,6 +99,39 @@ void ReaderTask::stopHook()
 void ReaderTask::cleanupHook()
 {
     ReaderTaskBase::cleanupHook();
+}
+
+bool ReaderTask::readSDOs(std::vector<canbus::Message> const& queries,
+    int expectedUpdate, base::Time timeout)
+{
+    for (auto const& query : queries) {
+        if (!readSDO(query, expectedUpdate, timeout))
+            return false;
+    }
+    return true;
+}
+bool ReaderTask::readSDO(canbus::Message const& query,
+    int expectedUpdate, base::Time timeout)
+{
+    _can_out.write(query);
+
+    base::Time deadline = base::Time::now() + timeout;
+    while(true)
+    {
+        canbus::Message msg;
+        if (_can_in.read(msg, false) == RTT::NewData) {
+            if (mController.process(msg).isUpdated(expectedUpdate)) {
+                return true;
+            }
+        }
+        if (base::Time::now() > deadline) {
+            exception(SDO_TIMED_OUT);
+            return false;
+        }
+        usleep(10);
+    }
+    // Never reached
+    return false;
 }
 
 bool ReaderTask::writeSDOs(std::vector<canbus::Message> const& queries,

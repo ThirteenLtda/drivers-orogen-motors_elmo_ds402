@@ -115,6 +115,10 @@ namespace motors_elmo_ds402{
             base::Time timeout = base::Time::fromSeconds(1));
         bool writeSDO(canbus::Message const& query,
             base::Time timeout = base::Time::fromSeconds(1));
+        bool readSDOs(std::vector<canbus::Message> const& queries,
+            int expectedUpdate, base::Time timeout);
+        bool readSDO(canbus::Message const& query,
+            int expectedUpdate, base::Time timeout);
     };
 }
 

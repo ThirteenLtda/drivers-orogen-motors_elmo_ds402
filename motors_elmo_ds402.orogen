@@ -5,6 +5,7 @@ using_library "motors_elmo_ds402"
 import_types_from "canbus"
 import_types_from "base"
 import_types_from "motors_elmo_ds402Types.hpp"
+import_types_from "motors_elmo_ds402/MotorParameters.hpp"
 import_types_from "canopen_master"
 
 # Task that monitors a driver's status
@@ -13,6 +14,9 @@ task_context "ReaderTask" do
 
     # The driver's CAN ID
     property "can_id", "/int"
+
+    # Parameters to convert from internal values to SI values
+    property "motor_parameters", "/motors_elmo_ds402/MotorParameters"
 
     # How the fields are meant to be read
     property "rpdo_configuration", "/canopen_master/PDOCommunicationParameters"
