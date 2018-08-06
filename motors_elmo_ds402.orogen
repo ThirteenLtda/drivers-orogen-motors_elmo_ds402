@@ -1,9 +1,11 @@
 name "motors_elmo_ds402"
 
 using_library "motors_elmo_ds402"
+using_library "base-types"
 
 import_types_from "canbus"
-import_types_from "base"
+import_types_from "base/JointState.hpp"
+import_types_from "base/samples/Joints.hpp"
 import_types_from "motors_elmo_ds402Types.hpp"
 import_types_from "motors_elmo_ds402/MotorParameters.hpp"
 import_types_from "canopen_master"
@@ -19,7 +21,7 @@ task_context "ReaderTask" do
     property "motor_parameters", "/motors_elmo_ds402/MotorParameters"
 
     # How the fields are meant to be read
-    property "rpdo_configuration", "/canopen_master/PDOCommunicationParameters"
+    property "tpdo_configuration", "/canopen_master/PDOCommunicationParameters"
 
     # The JointState fields required in the joint_state_samples items
     #
@@ -39,4 +41,32 @@ task_context "ReaderTask" do
     port_driven 'can_in'
 
     exception_states 'SDO_TIMED_OUT'
+end
+
+task_context "WriterTask" do
+    needs_configuration
+
+    # The driver's CAN ID
+    property "can_id", "/int"
+
+    # Parameters to convert from internal values to SI values
+    property "motor_parameters", "/motors_elmo_ds402/MotorParameters"
+
+    # How the setpoint is meant to be written
+    property "rpdo_configuration", "/canopen_master/PDOCommunicationParameters"
+
+    # The control mode
+    property "control_mode", "/base/JointState/MODE"
+
+    input_port "joint_command", "/base/samples/Joints"
+
+    # The incoming CAN packets
+    input_port("can_in", "/canbus/Message").
+        needs_reliable_connection
+    # The outgoing CAN packets
+    output_port "can_out", "/canbus/Message"
+
+    port_driven 'can_in'
+
+    exception_states 'SDO_TIMED_OUT', "INVALID_COMMAND"
 end
