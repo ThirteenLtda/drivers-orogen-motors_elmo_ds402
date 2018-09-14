@@ -26,8 +26,7 @@ namespace motors_elmo_ds402{
     {
 	friend class WriterTaskBase;
     protected:
-
-
+        void resetCurrentCommand();
 
     public:
         /** TaskContext constructor for WriterTask

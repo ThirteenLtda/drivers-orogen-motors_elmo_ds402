@@ -62,6 +62,7 @@ bool WriterTask::configureHook()
         0, _control_mode.get(), _rpdo_configuration.get());
     if (!writeSDOs(pdoSetup, base::Time::fromSeconds(2)))
         return false;
+
     _can_out.write(mController.queryNodeStateTransition(
         canopen_master::NODE_START));
     return true;
@@ -72,9 +73,20 @@ bool WriterTask::startHook()
         return false;
 
     writeSDO(mController.send(ControlWord(ControlWord::SWITCH_ON, true)));
-    writeSDO(mController.send(ControlWord(ControlWord::ENABLE_OPERATION, false)));
+
+    resetCurrentCommand();
     return true;
 }
+
+void WriterTask::resetCurrentCommand()
+{
+    mJoints.elements[0].speed = 0;
+    mJoints.elements[0].effort = 0;
+    mController.setControlTargets(mJoints.elements[0]);
+    _can_out.write(mController.getRPDOMessage(0));
+    writeSDO(mController.send(ControlWord(ControlWord::ENABLE_OPERATION, false)));
+}
+
 void WriterTask::updateHook()
 {
     WriterTaskBase::updateHook();
@@ -98,6 +110,7 @@ void WriterTask::errorHook()
 void WriterTask::stopHook()
 {
     writeSDO(mController.send(ControlWord(ControlWord::SHUTDOWN, true)));
+    resetCurrentCommand();
     WriterTaskBase::stopHook();
 }
 void WriterTask::cleanupHook()
