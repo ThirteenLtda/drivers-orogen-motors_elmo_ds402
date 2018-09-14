@@ -26,6 +26,7 @@ namespace motors_elmo_ds402{
     {
 	friend class ReaderTaskBase;
     protected:
+        bool ignoredEmergencyMessage(canopen_master::Emergency const& emergency) const;
 
 
 

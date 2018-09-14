@@ -2,6 +2,7 @@
 
 #include "ReaderTask.hpp"
 #include <canopen_master/SDO.hpp>
+#include <base-logging/Logging.hpp>
 
 using namespace motors_elmo_ds402;
 
@@ -75,7 +76,14 @@ void ReaderTask::updateHook()
     canbus::Message msg;
     while (_can_in.read(msg, false) == RTT::NewData)
     {
-        mUpdate.merge(mController.process(msg));
+        try {
+            mUpdate.merge(mController.process(msg));
+        }
+        catch(canopen_master::EmergencyMessageReceived e) {
+            if (!ignoredEmergencyMessage(e.message))
+                throw;
+        }
+
         if (mUpdate.isUpdated(mExpectedJointState)) {
             base::JointState state = mController.getJointState(mExpectedJointState);
             mJoints.time = msg.time;
@@ -86,6 +94,19 @@ void ReaderTask::updateHook()
     }
 
     ReaderTaskBase::updateHook();
+}
+bool ReaderTask::ignoredEmergencyMessage(canopen_master::Emergency const& message) const
+{
+    if (message.code == 0x8110)
+    {
+        LOG_ERROR_S << "Ignored emergency message related to CAN communication"
+            << std::endl;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 void ReaderTask::errorHook()
 {
@@ -119,8 +140,14 @@ bool ReaderTask::readSDO(canbus::Message const& query,
     {
         canbus::Message msg;
         if (_can_in.read(msg, false) == RTT::NewData) {
-            if (mController.process(msg).isUpdated(expectedUpdate)) {
-                return true;
+            try {
+                if (mController.process(msg).isUpdated(expectedUpdate)) {
+                    return true;
+                }
+            }
+            catch(canopen_master::EmergencyMessageReceived e) {
+                if (!ignoredEmergencyMessage(e.message))
+                    throw;
             }
         }
         if (base::Time::now() > deadline) {
@@ -154,8 +181,14 @@ bool ReaderTask::writeSDO(canbus::Message const& query, base::Time timeout)
     {
         canbus::Message msg;
         if (_can_in.read(msg, false) == RTT::NewData) {
-            if (mController.process(msg).isAcked(objectId, objectSubId)) {
-                return true;
+            try {
+                if (mController.process(msg).isAcked(objectId, objectSubId)) {
+                    return true;
+                }
+            }
+            catch(canopen_master::EmergencyMessageReceived e) {
+                if (!ignoredEmergencyMessage(e.message))
+                    throw;
             }
         }
         if (base::Time::now() > deadline) {

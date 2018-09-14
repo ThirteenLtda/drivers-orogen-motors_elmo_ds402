@@ -11,4 +11,5 @@
   <depend package="drivers/orogen/canbus" />
   <depend package="drivers/orogen/canopen_master" />
   <depend package="base/orogen/types" />
+  <depend package="base/logging" />
 </package>
