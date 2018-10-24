@@ -43,7 +43,6 @@ bool WriterTask::configureHook()
 
     _can_out.write(mController.queryNodeStateTransition(
         canopen_master::NODE_ENTER_PRE_OPERATIONAL));
-    writeSDO(mController.send(ControlWord(ControlWord::SHUTDOWN, true)));
 
     switch(_control_mode.get())
     {
@@ -66,6 +65,7 @@ bool WriterTask::configureHook()
 
     _can_out.write(mController.queryNodeStateTransition(
         canopen_master::NODE_START));
+
     return true;
 }
 bool WriterTask::startHook()
@@ -73,6 +73,8 @@ bool WriterTask::startHook()
     if (! WriterTaskBase::startHook())
         return false;
 
+    writeSDO(mController.send(ControlWord(ControlWord::FAULT_RESET, true)));
+    writeSDO(mController.send(ControlWord(ControlWord::SHUTDOWN, true)));
     writeSDO(mController.send(ControlWord(ControlWord::SWITCH_ON, true)));
 
     resetCurrentCommand();
