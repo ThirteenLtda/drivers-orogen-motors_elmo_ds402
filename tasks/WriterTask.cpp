@@ -112,8 +112,8 @@ void WriterTask::errorHook()
 }
 void WriterTask::stopHook()
 {
-    writeSDO(mController.send(ControlWord(ControlWord::SHUTDOWN, true)));
     resetCurrentCommand();
+    writeSDO(mController.send(ControlWord(ControlWord::SHUTDOWN, true)));
     WriterTaskBase::stopHook();
 }
 void WriterTask::cleanupHook()
