@@ -47,7 +47,10 @@ bool ReaderTask::configureHook()
 
     auto queryFactors = mController.queryFactors();
     if (!readSDOs(queryFactors, UPDATE_FACTORS, base::Time::fromSeconds(2)))
+    {
+        LOG_ERROR_S << "SDO Timeout while reading factors" << std::endl;
         return false;
+    }
     mController.setMotorParameters(_motor_parameters.get());
 
     _can_out.write(mController.queryNodeStateTransition(
@@ -56,7 +59,10 @@ bool ReaderTask::configureHook()
     auto pdoSetup = mController.configureJointStateUpdatePDOs(
         2, _tpdo_configuration.get(), mExpectedJointState);
     if (!writeSDOs(pdoSetup, base::Time::fromSeconds(2)))
+    {
+        LOG_ERROR_S << "SDO timeout while writing PDO setup" << std::endl;
         return false;
+    }
     _can_out.write(mController.queryNodeStateTransition(
         canopen_master::NODE_START));
     return true;
@@ -99,7 +105,14 @@ bool ReaderTask::ignoredEmergencyMessage(canopen_master::Emergency const& messag
 {
     if (message.code == 0x8110)
     {
-        LOG_ERROR_S << "Ignored emergency message related to CAN communication"
+        LOG_ERROR_S << "Ignored emergency message related to CAN communication "
+            << std::hex
+            << (int)message.code << " " << (int)message.errorRegister << " "
+            << (int)message.vendorSpecific[0]
+            << (int)message.vendorSpecific[1]
+            << (int)message.vendorSpecific[2]
+            << (int)message.vendorSpecific[3]
+            << (int)message.vendorSpecific[4]
             << std::endl;
         return true;
     }
