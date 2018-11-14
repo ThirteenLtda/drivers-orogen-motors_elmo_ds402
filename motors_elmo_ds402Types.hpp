@@ -12,6 +12,13 @@ namespace motors_elmo_ds402 {
         bool velocity = true;
         bool current_and_torque = true;
     };
+
+    /** Raw encoder ticks */
+    struct RawEncoders
+    {
+        base::Time time;
+        int64_t value = 0;
+    };
 }
 
 #endif

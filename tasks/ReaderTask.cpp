@@ -52,6 +52,7 @@ bool ReaderTask::configureHook()
         return false;
     }
     mController.setMotorParameters(_motor_parameters.get());
+    mController.setZeroPosition(_zero_position.get());
 
     _can_out.write(mController.queryNodeStateTransition(
         canopen_master::NODE_ENTER_PRE_OPERATIONAL));
@@ -95,6 +96,14 @@ void ReaderTask::updateHook()
             mJoints.time = msg.time;
             mJoints.elements[0] = state;
             _joints_state_samples.write(mJoints);
+
+            if (mExpectedJointState & UPDATE_JOINT_POSITION) {
+                RawEncoders sample;
+                sample.time = msg.time;
+                sample.value = mController.getRawPosition();
+                _raw_encoder_samples.write(sample);
+            }
+
             mUpdate = Update();
         }
     }
