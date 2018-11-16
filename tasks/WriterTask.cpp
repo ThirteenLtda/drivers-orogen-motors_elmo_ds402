@@ -77,7 +77,12 @@ bool WriterTask::startHook()
     writeSDO(mController.send(ControlWord(ControlWord::SHUTDOWN, true)));
     writeSDO(mController.send(ControlWord(ControlWord::SWITCH_ON, true)));
 
-    resetCurrentCommand();
+    try {
+        resetCurrentCommand();
+    }
+    catch(...) {
+        writeSDO(mController.send(ControlWord(ControlWord::SHUTDOWN, true)));
+    }
     return true;
 }
 
@@ -151,7 +156,7 @@ bool WriterTask::readSDO(canbus::Message const& query,
             }
         }
         if (base::Time::now() > deadline) {
-            exception(SDO_TIMED_OUT);
+	    throw std::runtime_error("Reading SDO timed out");
             return false;
         }
         usleep(10);
@@ -192,7 +197,7 @@ bool WriterTask::writeSDO(canbus::Message const& query, base::Time timeout)
             }
         }
         if (base::Time::now() > deadline) {
-            exception(SDO_TIMED_OUT);
+	    throw std::runtime_error("Writing SDO timed out");
             return false;
         }
         usleep(10);
