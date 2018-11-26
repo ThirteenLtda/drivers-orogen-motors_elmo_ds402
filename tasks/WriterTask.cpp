@@ -7,13 +7,11 @@ using namespace motors_elmo_ds402;
 
 WriterTask::WriterTask(std::string const& name)
     : WriterTaskBase(name)
-    , mController(0)
 {
 }
 
 WriterTask::WriterTask(std::string const& name, RTT::ExecutionEngine* engine)
     : WriterTaskBase(name, engine)
-    , mController(0)
 {
 }
 
@@ -34,14 +32,14 @@ bool WriterTask::configureHook()
 
     mController = Controller(_can_id.get());
     auto queryFactors = mController.queryFactors();
-    if (!readSDOs(queryFactors, UPDATE_FACTORS, base::Time::fromSeconds(2)))
-        return false;
+    readSDOs(queryFactors, UPDATE_FACTORS, base::Time::fromSeconds(2));
     mController.setMotorParameters(_motor_parameters.get());
 
     mJoints.resize(1);
 
-    _can_out.write(mController.queryNodeStateTransition(
-        canopen_master::NODE_ENTER_PRE_OPERATIONAL));
+    toNMTState(canopen_master::NODE_PRE_OPERATIONAL,
+        canopen_master::NODE_ENTER_PRE_OPERATIONAL,
+        base::Time::fromSeconds(1));
 
     switch(_control_mode.get())
     {
@@ -59,11 +57,11 @@ bool WriterTask::configureHook()
     }
     auto pdoSetup = mController.configureControlPDO(
         0, _control_mode.get(), _rpdo_configuration.get());
-    if (!writeSDOs(pdoSetup, base::Time::fromSeconds(2)))
-        return false;
+    writeSDOs(pdoSetup, base::Time::fromSeconds(2));
 
-    _can_out.write(mController.queryNodeStateTransition(
-        canopen_master::NODE_START));
+    toNMTState(canopen_master::NODE_OPERATIONAL,
+        canopen_master::NODE_START,
+        base::Time::fromSeconds(1));
 
     return true;
 }
@@ -81,6 +79,7 @@ bool WriterTask::startHook()
     }
     catch(...) {
         writeSDO(mController.send(ControlWord(ControlWord::SHUTDOWN, true)));
+        throw;
     }
     return true;
 }
@@ -123,72 +122,4 @@ void WriterTask::stopHook()
 void WriterTask::cleanupHook()
 {
     WriterTaskBase::cleanupHook();
-}
-
-bool WriterTask::readSDOs(std::vector<canbus::Message> const& queries,
-    int expectedUpdate, base::Time timeout)
-{
-    for (auto const& query : queries) {
-        if (!readSDO(query, expectedUpdate, timeout))
-            return false;
-    }
-    return true;
-}
-bool WriterTask::readSDO(canbus::Message const& query,
-    int expectedUpdate, base::Time timeout)
-{
-    _can_out.write(query);
-
-    base::Time deadline = base::Time::now() + timeout;
-    while(true)
-    {
-        canbus::Message msg;
-        if (_can_in.read(msg, false) == RTT::NewData) {
-            if (mController.process(msg).isUpdated(expectedUpdate)) {
-                return true;
-            }
-        }
-        if (base::Time::now() > deadline) {
-	    throw std::runtime_error("Reading SDO timed out");
-            return false;
-        }
-        usleep(10);
-    }
-    // Never reached
-    return false;
-}
-
-bool WriterTask::writeSDOs(std::vector<canbus::Message> const& queries,
-    base::Time timeout)
-{
-    for (auto const& query : queries) {
-        if (!writeSDO(query, timeout))
-            return false;
-    }
-    return true;
-}
-bool WriterTask::writeSDO(canbus::Message const& query, base::Time timeout)
-{
-    _can_out.write(query);
-
-    uint16_t objectId = canopen_master::getSDOObjectID(query);
-    uint16_t objectSubId = canopen_master::getSDOObjectSubID(query);
-
-    base::Time deadline = base::Time::now() + timeout;
-    while(true)
-    {
-        canbus::Message msg;
-        if (_can_in.read(msg, false) == RTT::NewData) {
-            if (mController.process(msg).isAcked(objectId, objectSubId)) {
-                return true;
-            }
-        }
-        if (base::Time::now() > deadline) {
-	    throw std::runtime_error("Writing SDO timed out");
-            return false;
-        }
-        usleep(10);
-    }
-    // Never reached
-    return false;
 }
