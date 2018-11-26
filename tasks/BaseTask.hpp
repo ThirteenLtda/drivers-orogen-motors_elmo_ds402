@@ -1,50 +1,53 @@
 /* Generated from orogen/lib/orogen/templates/tasks/Task.hpp */
 
-#ifndef MOTORS_ELMO_DS402_WRITERTASK_TASK_HPP
-#define MOTORS_ELMO_DS402_WRITERTASK_TASK_HPP
+#ifndef MOTORS_ELMO_DS402_BASETASK_TASK_HPP
+#define MOTORS_ELMO_DS402_BASETASK_TASK_HPP
 
-#include "motors_elmo_ds402/WriterTaskBase.hpp"
+#include "motors_elmo_ds402/BaseTaskBase.hpp"
+#include <canopen_master/Frame.hpp>
+#include <base/Time.hpp>
 #include <motors_elmo_ds402/Controller.hpp>
 
 namespace motors_elmo_ds402{
 
-    /*! \class WriterTask
+    /*! \class BaseTask
      * \brief The task context provides and requires services. It uses an ExecutionEngine to perform its functions.
      * Essential interfaces are operations, data flow ports and properties. These interfaces have been defined using the oroGen specification.
      * In order to modify the interfaces you should (re)use oroGen and rely on the associated workflow.
-     *
+     * Base functionality
      * \details
      * The name of a TaskContext is primarily defined via:
      \verbatim
      deployment 'deployment_name'
-         task('custom_task_name','motors_elmo_ds402::WriterTask')
+         task('custom_task_name','motors_elmo_ds402::BaseTask')
      end
      \endverbatim
      *  It can be dynamically adapted when the deployment is called with a prefix argument.
      */
-    class WriterTask : public WriterTaskBase
+    class BaseTask : public BaseTaskBase
     {
-	friend class WriterTaskBase;
+	friend class BaseTaskBase;
     protected:
-        void resetCurrentCommand();
+
+
 
     public:
-        /** TaskContext constructor for WriterTask
+        /** TaskContext constructor for BaseTask
          * \param name Name of the task. This name needs to be unique to make it identifiable via nameservices.
          * \param initial_state The initial TaskState of the TaskContext. Default is Stopped state.
          */
-        WriterTask(std::string const& name = "motors_elmo_ds402::WriterTask");
+        BaseTask(std::string const& name = "motors_elmo_ds402::BaseTask");
 
-        /** TaskContext constructor for WriterTask
+        /** TaskContext constructor for BaseTask
          * \param name Name of the task. This name needs to be unique to make it identifiable for nameservices.
          * \param engine The RTT Execution engine to be used for this task, which serialises the execution of all commands, programs, state machines and incoming events for a task.
          *
          */
-        WriterTask(std::string const& name, RTT::ExecutionEngine* engine);
+        BaseTask(std::string const& name, RTT::ExecutionEngine* engine);
 
-        /** Default deconstructor of WriterTask
+        /** Default deconstructor of BaseTask
          */
-	~WriterTask();
+	~BaseTask();
 
         /** This hook is called by Orocos when the state machine transitions
          * from PreOperational to Stopped. If it returns false, then the
@@ -104,9 +107,28 @@ namespace motors_elmo_ds402{
          */
         void cleanupHook();
 
-    private:
-        base::samples::Joints mJoints;
+    protected:
+        Controller mController;
+
+        canopen_master::NODE_STATE getNMTState(base::Time deadline);
+
+        void toNMTState(canopen_master::NODE_STATE desiredState,
+            canopen_master::NODE_STATE_TRANSITION transition,
+            base::Time timeout = base::Time::fromSeconds(1));
+
+        void readSDOs(std::vector<canbus::Message> const& queries, int expectedUpdate,
+            base::Time timeout = base::Time::fromSeconds(1));
+
+        void readSDO(canbus::Message const& query, int expectedUpdate,
+            base::Time timeout = base::Time::fromSeconds(1));
+
+        void writeSDOs(std::vector<canbus::Message> const& queries,
+            base::Time timeout = base::Time::fromSeconds(1));
+
+        void writeSDO(canbus::Message const& query,
+            base::Time timeout = base::Time::fromSeconds(1));
     };
 }
 
 #endif
+

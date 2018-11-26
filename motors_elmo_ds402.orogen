@@ -10,8 +10,9 @@ import_types_from "motors_elmo_ds402Types.hpp"
 import_types_from "motors_elmo_ds402/MotorParameters.hpp"
 import_types_from "canopen_master"
 
-# Task that monitors a driver's status
-task_context "ReaderTask" do
+# Base functionality
+task_context "BaseTask" do
+    abstract
     needs_configuration
 
     # The driver's CAN ID
@@ -20,6 +21,19 @@ task_context "ReaderTask" do
     # Parameters to convert from internal values to SI values
     property "motor_parameters", "/motors_elmo_ds402/MotorParameters"
 
+    # The incoming CAN packets
+    input_port("can_in", "/canbus/Message").
+        needs_reliable_connection
+    # The outgoing CAN packets
+    output_port "can_out", "/canbus/Message"
+
+    port_driven 'can_in'
+
+    exception_states 'SDO_TIMED_OUT', 'NMT_TIMED_OUT'
+end
+
+# Task that monitors a driver's status
+task_context "ReaderTask", subclasses: "BaseTask" do
     # How the fields are meant to be read
     property "tpdo_configuration", "/canopen_master/PDOCommunicationParameters"
 
@@ -37,27 +51,9 @@ task_context "ReaderTask" do
 
     # The raw encoder values, before they are converted to angles
     output_port "raw_encoder_samples", "/motors_elmo_ds402/RawEncoders"
-
-    # The incoming CAN packets
-    input_port("can_in", "/canbus/Message").
-        needs_reliable_connection
-    # The outgoing CAN packets
-    output_port "can_out", "/canbus/Message"
-
-    port_driven 'can_in'
-
-    exception_states 'SDO_TIMED_OUT'
 end
 
-task_context "WriterTask" do
-    needs_configuration
-
-    # The driver's CAN ID
-    property "can_id", "/int"
-
-    # Parameters to convert from internal values to SI values
-    property "motor_parameters", "/motors_elmo_ds402/MotorParameters"
-
+task_context "WriterTask", subclasses: "BaseTask" do
     # How the setpoint is meant to be written
     property "rpdo_configuration", "/canopen_master/PDOCommunicationParameters"
 
@@ -66,13 +62,7 @@ task_context "WriterTask" do
 
     input_port "joint_command", "/base/samples/Joints"
 
-    # The incoming CAN packets
-    input_port("can_in", "/canbus/Message").
-        needs_reliable_connection
-    # The outgoing CAN packets
-    output_port "can_out", "/canbus/Message"
-
     port_driven
 
-    exception_states 'SDO_TIMED_OUT', "INVALID_COMMAND"
+    exception_states "INVALID_COMMAND"
 end

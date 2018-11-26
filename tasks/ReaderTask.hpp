@@ -106,19 +106,9 @@ namespace motors_elmo_ds402{
         void cleanupHook();
 
     private:
-        Controller mController;
         Update mUpdate;
         base::samples::Joints mJoints;
         uint64_t mExpectedJointState;
-
-        bool writeSDOs(std::vector<canbus::Message> const& queries,
-            base::Time timeout = base::Time::fromSeconds(1));
-        bool writeSDO(canbus::Message const& query,
-            base::Time timeout = base::Time::fromSeconds(1));
-        bool readSDOs(std::vector<canbus::Message> const& queries,
-            int expectedUpdate, base::Time timeout);
-        bool readSDO(canbus::Message const& query,
-            int expectedUpdate, base::Time timeout);
     };
 }
 
