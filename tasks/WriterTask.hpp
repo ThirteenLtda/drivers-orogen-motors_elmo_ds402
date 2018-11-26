@@ -116,8 +116,6 @@ namespace motors_elmo_ds402{
             int expectedUpdate, base::Time timeout);
         bool readSDO(canbus::Message const& query,
             int expectedUpdate, base::Time timeout);
-
-        bool ignoredEmergencyMessage(canopen_master::Emergency const& emergency) const;
     };
 }
 

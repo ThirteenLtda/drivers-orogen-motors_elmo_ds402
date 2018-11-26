@@ -2,7 +2,6 @@
 
 #include "WriterTask.hpp"
 #include <canopen_master/SDO.hpp>
-#include <base-logging/Logging.hpp>
 
 using namespace motors_elmo_ds402;
 
@@ -145,14 +144,8 @@ bool WriterTask::readSDO(canbus::Message const& query,
     {
         canbus::Message msg;
         if (_can_in.read(msg, false) == RTT::NewData) {
-            try {
-                if (mController.process(msg).isUpdated(expectedUpdate)) {
-                    return true;
-                }
-            }
-            catch(canopen_master::EmergencyMessageReceived e) {
-                if (!ignoredEmergencyMessage(e.message))
-                    throw;
+            if (mController.process(msg).isUpdated(expectedUpdate)) {
+                return true;
             }
         }
         if (base::Time::now() > deadline) {
@@ -186,14 +179,8 @@ bool WriterTask::writeSDO(canbus::Message const& query, base::Time timeout)
     {
         canbus::Message msg;
         if (_can_in.read(msg, false) == RTT::NewData) {
-            try {
-                if (mController.process(msg).isAcked(objectId, objectSubId)) {
-                    return true;
-                }
-            }
-            catch(canopen_master::EmergencyMessageReceived e) {
-                if (!ignoredEmergencyMessage(e.message))
-                    throw;
+            if (mController.process(msg).isAcked(objectId, objectSubId)) {
+                return true;
             }
         }
         if (base::Time::now() > deadline) {
@@ -204,17 +191,4 @@ bool WriterTask::writeSDO(canbus::Message const& query, base::Time timeout)
     }
     // Never reached
     return false;
-}
-bool WriterTask::ignoredEmergencyMessage(canopen_master::Emergency const& message) const
-{
-    if (message.code == 0x8110)
-    {
-        LOG_ERROR_S << "Ignored emergency message related to CAN communication"
-            << std::endl;
-        return true;
-    }
-    else
-    {
-        return false;
-    }
 }

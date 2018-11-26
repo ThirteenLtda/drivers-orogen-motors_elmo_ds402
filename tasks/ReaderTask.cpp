@@ -83,14 +83,7 @@ void ReaderTask::updateHook()
     canbus::Message msg;
     while (_can_in.read(msg, false) == RTT::NewData)
     {
-        try {
-            mUpdate.merge(mController.process(msg));
-        }
-        catch(canopen_master::EmergencyMessageReceived e) {
-            if (!ignoredEmergencyMessage(e.message))
-                throw;
-        }
-
+        mUpdate.merge(mController.process(msg));
         if (mUpdate.isUpdated(mExpectedJointState)) {
             base::JointState state = mController.getJointState(mExpectedJointState);
             mJoints.time = msg.time;
@@ -109,26 +102,6 @@ void ReaderTask::updateHook()
     }
 
     ReaderTaskBase::updateHook();
-}
-bool ReaderTask::ignoredEmergencyMessage(canopen_master::Emergency const& message) const
-{
-    if (message.code == 0x8110)
-    {
-        LOG_ERROR_S << "Ignored emergency message related to CAN communication "
-            << std::hex
-            << (int)message.code << " " << (int)message.errorRegister << " "
-            << (int)message.vendorSpecific[0]
-            << (int)message.vendorSpecific[1]
-            << (int)message.vendorSpecific[2]
-            << (int)message.vendorSpecific[3]
-            << (int)message.vendorSpecific[4]
-            << std::endl;
-        return true;
-    }
-    else
-    {
-        return false;
-    }
 }
 void ReaderTask::errorHook()
 {
@@ -162,14 +135,8 @@ bool ReaderTask::readSDO(canbus::Message const& query,
     {
         canbus::Message msg;
         if (_can_in.read(msg, false) == RTT::NewData) {
-            try {
-                if (mController.process(msg).isUpdated(expectedUpdate)) {
-                    return true;
-                }
-            }
-            catch(canopen_master::EmergencyMessageReceived e) {
-                if (!ignoredEmergencyMessage(e.message))
-                    throw;
+            if (mController.process(msg).isUpdated(expectedUpdate)) {
+                return true;
             }
         }
         if (base::Time::now() > deadline) {
@@ -203,14 +170,8 @@ bool ReaderTask::writeSDO(canbus::Message const& query, base::Time timeout)
     {
         canbus::Message msg;
         if (_can_in.read(msg, false) == RTT::NewData) {
-            try {
-                if (mController.process(msg).isAcked(objectId, objectSubId)) {
-                    return true;
-                }
-            }
-            catch(canopen_master::EmergencyMessageReceived e) {
-                if (!ignoredEmergencyMessage(e.message))
-                    throw;
+            if (mController.process(msg).isAcked(objectId, objectSubId)) {
+                return true;
             }
         }
         if (base::Time::now() > deadline) {
