@@ -106,7 +106,9 @@ void WriterTask::updateHook()
             return exception(INVALID_COMMAND);
 
         mController.setControlTargets(mJoints.elements[0]);
-        _can_out.write(mController.getRPDOMessage(0));
+        auto msg = mController.getRPDOMessage(0);
+        _latency.write(base::Time::now() - msg.time);
+        _can_out.write(msg);
     }
 }
 void WriterTask::errorHook()

@@ -62,6 +62,10 @@ task_context "WriterTask", subclasses: "BaseTask" do
 
     input_port "joint_command", "/base/samples/Joints"
 
+    # The difference between the realtime and logical time from the joints,
+    # at the moment where we output the CAN message
+    output_port 'latency', '/base/Time'
+
     port_driven
 
     exception_states "INVALID_COMMAND"
