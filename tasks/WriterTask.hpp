@@ -25,6 +25,9 @@ namespace motors_elmo_ds402{
     class WriterTask : public WriterTaskBase
     {
 	friend class WriterTaskBase;
+    private:
+        base::Time time_last_update, timeout;
+
     protected:
         void resetCurrentCommand();
 
@@ -105,7 +108,7 @@ namespace motors_elmo_ds402{
         void cleanupHook();
 
     private:
-        base::samples::Joints mJoints;
+        base::samples::Joints mJoints, mJointsTimeout;
     };
 }
 

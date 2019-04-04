@@ -36,6 +36,7 @@ bool WriterTask::configureHook()
     mController.setMotorParameters(_motor_parameters.get());
 
     mJoints.resize(1);
+    mJointsTimeout.resize(1);
 
     toNMTState(canopen_master::NODE_PRE_OPERATIONAL,
         canopen_master::NODE_ENTER_PRE_OPERATIONAL,
@@ -63,6 +64,12 @@ bool WriterTask::configureHook()
         canopen_master::NODE_START,
         base::Time::fromSeconds(1));
 
+    if (_timeout.get() < 0)
+        throw std::invalid_argument("invalid timeout value; timeout must be >= 0, where 0 means disabled");
+    timeout = base::Time::fromSeconds(_timeout.get());
+    mJointsTimeout.elements[0].speed = 0;
+    mJointsTimeout.elements[0].effort = 0;
+
     return true;
 }
 bool WriterTask::startHook()
@@ -79,6 +86,9 @@ bool WriterTask::startHook()
         writeSDO(mController.send(ControlWord(ControlWord::SWITCH_ON, true)));
         throw;
     }
+
+    time_last_update = base::Time::fromSeconds(0);
+
     return true;
 }
 
@@ -94,7 +104,23 @@ void WriterTask::updateHook()
 {
     WriterTaskBase::updateHook();
 
-    while (_joint_command.read(mJoints, false) == RTT::NewData)
+    auto now = base::Time::now();
+    if (now - time_last_update > timeout && !time_last_update.isNull() && !timeout.isNull())
+    {
+        time_last_update = now;
+        // clear the channel if it's been a while since the last joint sample has arrived
+        _joint_command.clear();
+        // send the default command
+        mJointsTimeout.elements[0].position = mJoints.elements[0].position;
+        mController.setControlTargets(mJointsTimeout.elements[0]);
+        auto msg = mController.getRPDOMessage(0);
+        now = base::Time::now();
+        _latency.write(now - msg.time);
+        _can_out.write(msg);
+        return;
+    }
+
+    if (_joint_command.readNewest(mJoints, false) == RTT::NewData)
     {
         if (mJoints.size() != 1)
             return exception(INVALID_COMMAND);
@@ -104,8 +130,10 @@ void WriterTask::updateHook()
 
         mController.setControlTargets(mJoints.elements[0]);
         auto msg = mController.getRPDOMessage(0);
-        _latency.write(base::Time::now() - msg.time);
+        now = base::Time::now();
+        _latency.write(now - msg.time);
         _can_out.write(msg);
+        time_last_update = now;
     }
 }
 void WriterTask::errorHook()
