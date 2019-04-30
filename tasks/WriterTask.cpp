@@ -70,15 +70,13 @@ bool WriterTask::startHook()
     if (! WriterTaskBase::startHook())
         return false;
 
-    writeSDO(mController.send(ControlWord(ControlWord::FAULT_RESET, true)));
-    writeSDO(mController.send(ControlWord(ControlWord::SHUTDOWN, true)));
-    writeSDO(mController.send(ControlWord(ControlWord::SWITCH_ON, true)));
-
     try {
         resetCurrentCommand();
+        writeSDO(mController.send(ControlWord(ControlWord::ENABLE_OPERATION, false)));
     }
     catch(...) {
         writeSDO(mController.send(ControlWord(ControlWord::SHUTDOWN, true)));
+        writeSDO(mController.send(ControlWord(ControlWord::SWITCH_ON, true)));
         throw;
     }
     return true;
@@ -90,7 +88,6 @@ void WriterTask::resetCurrentCommand()
     mJoints.elements[0].effort = 0;
     mController.setControlTargets(mJoints.elements[0]);
     _can_out.write(mController.getRPDOMessage(0));
-    writeSDO(mController.send(ControlWord(ControlWord::ENABLE_OPERATION, false)));
 }
 
 void WriterTask::updateHook()
@@ -106,7 +103,9 @@ void WriterTask::updateHook()
             return exception(INVALID_COMMAND);
 
         mController.setControlTargets(mJoints.elements[0]);
-        _can_out.write(mController.getRPDOMessage(0));
+        auto msg = mController.getRPDOMessage(0);
+        _latency.write(base::Time::now() - msg.time);
+        _can_out.write(msg);
     }
 }
 void WriterTask::errorHook()
@@ -116,7 +115,9 @@ void WriterTask::errorHook()
 void WriterTask::stopHook()
 {
     resetCurrentCommand();
+    writeSDO(mController.send(ControlWord(ControlWord::FAULT_RESET, true)));
     writeSDO(mController.send(ControlWord(ControlWord::SHUTDOWN, true)));
+    writeSDO(mController.send(ControlWord(ControlWord::SWITCH_ON, true)));
     WriterTaskBase::stopHook();
 }
 void WriterTask::cleanupHook()
