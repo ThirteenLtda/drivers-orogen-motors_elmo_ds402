@@ -59,6 +59,7 @@ task_context "WriterTask", subclasses: "BaseTask" do
 
     # The control mode
     property "control_mode", "/base/JointState/MODE"
+    property "timeout", "double", 0
 
     input_port "joint_command", "/base/samples/Joints"
 
